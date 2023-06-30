@@ -1,6 +1,11 @@
 {
     "name": "tda/laravel-resellerinterface",
     "description": "Laravel package for Reserler interface API package",
+    "keywords": [
+        "tda",
+        "laravel",
+        "resellerinterface"
+    ],
     "type": "library",
     "require": {
         "resellerinterface/api-client-php": "^1.0",
@@ -35,5 +40,6 @@
             }
         }
     },
-    "minimum-stability": "dev"
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }

@@ -26,6 +26,8 @@ class Resellerinterface
             $this->resellerId = $resellerId ?? config('resellerinterface.resellerId');
         }
 
+        dd($username, $password, $this->resellerId);
+
         $this->client = new Client(self::BASE_URL);
         try {
             $this->client->login( $username, $password, $this->resellerId );
