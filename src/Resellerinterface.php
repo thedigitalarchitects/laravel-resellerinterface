@@ -13,7 +13,7 @@ class Resellerinterface
     use Helper;
 
     protected static Client $client;
-    protected static int $resellerId;
+    public static int $resellerId;
     protected static string $username;
     protected static string $password;
     protected static bool $isStaging = false;
@@ -23,7 +23,7 @@ class Resellerinterface
     public array $errors = [];
 
 
-    protected static function init()
+    public static function init()
     {
         self::configLocation();
         try {
@@ -62,32 +62,9 @@ class Resellerinterface
         );
     }
 
-    public static function listHandles(string $search = null, int $offset = 0, int $limit = 10): Collection
+    public static function getClient()
     {
-        $response = self::request('handle/list');
-        $handles = new Collection();
-        if(self::isSuccess($response['state'])) {
-            foreach($response['list'] as $handle) {
-                $handles[] = Handle::setData($handle);
-            }
-        }
-
-        return $handles;
-    }
-
-    public static function request(string $endpoint, array $data = [])
-    {
-        self::init();
-        $data['resellerID'] = $data['resellerID'] ?? self::$resellerId;
-        //dd($data);
-
-        $response = self::$client->request( $endpoint, $data);
-        if(!$response->isError()) {
-            return ($response->getData());
-        } else {
-            self::$errors = $response->getErrors();
-            throw new \Exception('Bad request: parameters not valid');
-        }
+        return self::$client;
     }
 
 }

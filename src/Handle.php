@@ -38,7 +38,7 @@ class Handle
 
     public static function list(string $search = null, int $offset = 0, int $limit = 10): Collection
     {
-        $response = self::request('list');
+        $response = self::request('handle/list');
         $handles = new Collection();
         if(self::isSuccess($response['state'])) {
             foreach($response['list'] as $handle) {
@@ -55,7 +55,7 @@ class Handle
         self::validate($data, 'create');
         $data = self::setData($data);
 
-        $response = self::request('create', $data->toArray());
+        $response = self::request('handle/create', $data->toArray());
         if(self::isSuccess($response['state'])) {
             $data->alias = $response['handleName'];
             return new Static();
@@ -66,7 +66,7 @@ class Handle
 
     public static function find(string $alias): object
     {
-        $response = self::request('details', ['alias' => $alias]);
+        $response = self::request('handle/details', ['alias' => $alias]);
         if(self::isSuccess($response['state'])) {
             self::setData($response['handle']);
             return new Static();
@@ -79,7 +79,7 @@ class Handle
     {
         self::validate($data, 'update');
         $data['alias'] = self::$alias;
-        $response = self::request('update', $data);
+        $response = self::request('handle/update', $data);
         if(self::isSuccess($response['state'])) {
             self::setData($data);
             return new Static();
@@ -96,15 +96,5 @@ class Handle
             'tech' => self::$alias,
             'zone' => self::$alias,
         ];
-    }
-
-    protected static function request(string $type, array $params = [])
-    {
-        try {
-            return Resellerinterface::request( "handle/" . $type, $params);
-        } catch(\Exception $e) {
-            throw new \Exception($e->getMessage());
-        }
-
     }
 }

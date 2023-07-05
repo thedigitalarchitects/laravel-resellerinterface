@@ -1,6 +1,7 @@
 <?php
 
  namespace Tda\LaravelResellerinterface\Trait;
+ use Tda\LaravelResellerinterface\Resellerinterface;
  use ReflectionObject;
  use ReflectionProperty;
  use ReflectionMethod;
@@ -99,6 +100,21 @@
             return true;
         }
         return false;
+    }
+
+    public static function request(string $endpoint, array $data = [])
+    {
+        Resellerinterface::init();
+        $data['resellerID'] = $data['resellerID'] ?? Resellerinterface::$resellerId;
+        //dd($data);
+
+        $response = Resellerinterface::getClient()->request( $endpoint, $data);
+        if(!$response->isError()) {
+            return ($response->getData());
+        } else {
+            self::$errors = $response->getErrors();
+            throw new \Exception('Bad request: parameters not valid');
+        }
     }
 
  }
