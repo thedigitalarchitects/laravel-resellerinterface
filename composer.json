@@ -36,7 +36,7 @@
                 "Tda\\LaravelResellerinterface\\ResellerinterfaceServiceProvider"
             ],
             "aliases": {
-                "Netcup": "Tda\\LaravelResellerinterface\\Facades\\Resellerinterface"
+                "Resellerinterface": "Tda\\LaravelResellerinterface\\Facades\\Resellerinterface"
             }
         }
     },
