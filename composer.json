@@ -1,28 +1,28 @@
 {
-    "name": "tda/laravel-resellerinterface",
-    "description": "Laravel package for Reserler interface API package",
+    "name": "tda/laravel-reserllerinterface",
+    "description": "Laravel package for Resellerinterface API",
     "keywords": [
         "tda",
         "laravel",
-        "resellerinterface"
+        "reserllerinterface"
     ],
-    "type": "library",
-    "require": {
-        "resellerinterface/api-client-php": "^1.0",
-        "php": "^8.0"
-    },
     "license": "MIT",
+    "authors": [
+        {
+            "name": "DL",
+            "email": "davileichs@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "resellerinterface/api-client-php": "^1.0"
+    },
     "autoload": {
         "psr-4": {
             "Tda\\LaravelResellerinterface\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Davi Leichsenring",
-            "email": "davileichs@gmail.com"
-        }
-    ],
     "config": {
         "sort-packages": true,
         "allow-plugins": {
@@ -36,7 +36,7 @@
                 "Tda\\LaravelResellerinterface\\ResellerinterfaceServiceProvider"
             ],
             "aliases": {
-                "Resellerinterface": "Tda\\LaravelResellerinterface\\Facades\\Resellerinterface"
+                "Netcup": "Tda\\LaravelResellerinterface\\Facades\\Resellerinterface"
             }
         }
     },
