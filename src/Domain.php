@@ -2,11 +2,7 @@
 
 namespace Tda\LaravelResellerinterface;
 
-
 use Illuminate\Support\Collection;
-use ReflectionObject;
-use ReflectionProperty;
-use Tda\LaravelResellerinterface\Resellerinterface;
 use Tda\LaravelResellerinterface\Handle;
 use Tda\LaravelResellerinterface\Trait\Helper;
 
@@ -34,31 +30,36 @@ class Domain
     public array $handles;
     public array $tldExotic;
     public array $tldInfo;
+    public array $prices;
+    public float $oneTimePrice;
     protected array $additionalParams = [];
 
     protected array $required = ['domain', 'handles'];
     protected array $updatable = ['handles', 'tradeOK', 'nameserver', 'ensID', 'dnssec'];
 
 
-    public function __construct(
-        protected Resellerinterface $client = new Resellerinterface()
-    )
+    public static function __callStatic($method, $parameters)
     {
+        switch($method) {
+            case 'all':
+            case 'check':
+            case 'fields':
+                return (new Static)->$method(...$parameters);
+        }
     }
-
 
     public function isAvailable(): bool
     {
         return $this->isAvailable;
     }
 
-    public function list()
+    protected function all()
     {
-        $response = $this->request( "list");
+        $response = $this->request("domain/list");
         $domains = new Collection();
         if($this->isSuccess($response['state'])) {
             foreach($response['list'] as $domain) {
-                $domains[] = (new Domain($this->client))->setData($domain);
+                $domains[] = (new Domain())->setData($domain);
             }
         }
         return $domains;
@@ -81,7 +82,7 @@ class Domain
             $data = array_merge($data, $this->additionalParams);
         }
 
-        $response = $this->request('create', $data);
+        $response = $this->request('domain/create', $data);
         if($this->isSuccess($response['state'])) {
             $this->isAvailable = false;
             return $this->setData($response['domain']);
@@ -100,8 +101,9 @@ class Domain
         if(empty($data)) {
             throw new \Exception('No data to update');
         }
+        dd($data);
         $data['domain'] = $this->domainID;
-        $response = $this->request('update', $data);
+        $response = $this->request('domain/update', $data);
 
         if($this->isSuccess($response['state'])) {
             return $this->details($this->domainID);
@@ -110,26 +112,31 @@ class Domain
         }
     }
 
-    public function updateNameservers()
+    public function setNameserver(array $nameserver)
     {
-        $this->request('setNameserver', ['domain' => $this->domain, 'nameserver' => $this->additionalParams['nameserver']]);
-        return $this->details($this->domainID);
+        foreach($nameserver as $vns) {
+            list($name, $ipv4, $ipv6) = $vns;
+            $this->addNameserver($name, $ipv4, $ipv6);
+        }
+        $this->request('domain/setNameserver', ['domain' => $this->domain, 'nameserver' => $this->additionalParams['nameserver']]);
+        return $this->details();
     }
 
-    public function updateHandles(Handle $handle)
+    public function setHandles(Handle $handle)
     {
-        $this->request('setHandles', ['domain' => $this->domain, 'handles' => $handle->getOwnershipData()]);
-        return $this->details($this->domainID);
+        $this->request('domain/setHandles', ['domain' => $this->domain, 'handles' => $handle->getOwnershipData()]);
+        return $this->details();
     }
 
-    public function check(string $domain): self
+    protected function check(string $domain): self
     {
         $this->domain = $domain;
-        $response = $this->request('check', ['domain' => $domain]);
+        $response = $this->request('domain/check', ['domain' => $domain]);
         $status = $response['results'][0]['result'];
         switch($status) {
             case 'free':
                 $this->isAvailable = true;
+                $this->getPrice();
                 break;
             case 'connect':
                 $this->isAvailable = false;
@@ -147,14 +154,31 @@ class Domain
         if(empty($domain)) {
             throw new \Exception('Domain ID not valid');
         }
-        $response = $this->request('details', ['domain' => $domain]);
-
+        $response = $this->request('domain/details', ['domain' => $domain]);
         if($this->isSuccess($response['state'])) {
             $this->isAvailable = false;
             return $this->setData($response['domain']);
         } else {
             throw new \Exception("Error creating domain");
         }
+    }
+
+    public function getTld(): string
+    {
+        $aux = (explode('.', $this->domain));
+        return end($aux);
+    }
+
+    public function getPrice()
+    {
+        $response = $this->request('prices/domains', ['search' => ['tld' => $this->getTld()]], false);
+        if($this->isSuccess($response['state'])) {
+            $this->prices = $response['list'][0]['products'];
+            $this->oneTimePrice = $this->prices['authinfo2']['prices']['total'];
+        } else {
+            throw new \Exception("Error getting price");
+        }
+
     }
 
     public function additionalParams(array $additionalParams)
@@ -205,18 +229,9 @@ class Domain
 
     public function records()
     {
-        return new Records($this->client, $this);
+        return new DnsRecord($this);
     }
 
-    protected function request(string $type, array $params = [])
-    {
-        try {
-            return $this->client->request( "domain/" . $type, $params);
-        } catch(\Exception $e) {
-            throw new \Exception($e->getMessage());
-        }
-
-    }
 }
 
 

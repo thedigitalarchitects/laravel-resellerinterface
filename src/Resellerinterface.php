@@ -2,18 +2,13 @@
 
 namespace Tda\LaravelResellerinterface;
 
-
-use Illuminate\Support\Collection;
 use ResellerInterface\Api\Client;
-use Tda\LaravelResellerinterface\Trait\Helper;
-
 
 class Resellerinterface
 {
-    use Helper;
 
     protected static Client $client;
-    public static int $resellerId;
+    protected static int $resellerId;
     protected static string $username;
     protected static string $password;
     protected static bool $isStaging = false;
@@ -25,7 +20,9 @@ class Resellerinterface
 
     public static function init()
     {
-        self::configLocation();
+        if(!self::$username) {
+            self::configLocation();
+        }
         try {
             if(self::$isStaging) {
                 self::$client = new Client(self::BASE_STAGING_URL);
@@ -43,7 +40,7 @@ class Resellerinterface
         self::$isStaging = true;
     }
 
-    public static function config(string $username, string $password, int $resellerId)
+    public static function config(string $username, string $password, ?int $resellerId = null)
     {
         self::$username = $username;
         self::$password = $password;
@@ -65,6 +62,11 @@ class Resellerinterface
     public static function getClient()
     {
         return self::$client;
+    }
+
+    public static function getResellerId()
+    {
+        return self::$resellerId;
     }
 
 }

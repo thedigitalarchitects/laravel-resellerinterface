@@ -1,10 +1,11 @@
 <?php
 
 namespace Tda\LaravelResellerinterface;
+
 use Illuminate\Support\Collection;
 use Tda\LaravelResellerinterface\Trait\Helper;
 
-class Records
+class DnsRecord
 {
     use Helper;
 
@@ -17,21 +18,20 @@ class Records
 
 
     public function __construct(
-        protected Resellerinterface $client = new Resellerinterface(),
         protected Domain $domain = new Domain()
     )
     {
     }
 
-    public function list()
+    public function all(): Collection
     {
-        $response = $this->request( "listRecords", [
+        $response = $this->request( "dns/listRecords", [
             'domain' => $this->domain->domain,
           ] );
         $records = new Collection();
         if($this->isSuccess($response['state'])) {
-            foreach($response['records'] as $key=>$domain) {
-                $records[$key] = (new Records($this->client, $this->domain))->setData($domain);
+            foreach($response['records'] as $key=>$record) {
+                $records[$key] = (new DnsRecord( $this->domain))->setData($record);
             }
         }
         return $records;
@@ -39,7 +39,7 @@ class Records
 
     public function create(string $name, string $type, string $content, int $ttl = 86400): self
     {
-        $response = $this->request( "createRecord", [
+        $response = $this->request( "dns/createRecord", [
             'domain' => $this->domain->domain,
             'name' => $name,
             'type' => $type,
@@ -47,7 +47,7 @@ class Records
             'ttl' => $ttl,
           ] );
         if($this->isSuccess($response['state'])) {
-            return (new Records($this->client, $this->domain))->setData($response['record']);
+            return $this->setData($response['record']);
         } else {
             throw new \Exception("Error creating record");
         }
@@ -55,7 +55,7 @@ class Records
 
     public function update(string $name, string $type, string $content, int $ttl = 86400): self
     {
-        $response = $this->request( "updateRecord", [
+        $response = $this->request( "dns/updateRecord", [
             'domain' => $this->domain->domain,
             'id' => $this->id,
             'name' => $name,
@@ -72,7 +72,7 @@ class Records
 
     public function delete(): bool
     {
-        $response = $this->request( "deleteRecord", [
+        $response = $this->request( "dns/deleteRecord", [
             'domain' => $this->domain->domain,
             'id' => $this->id,
           ] );
@@ -81,15 +81,5 @@ class Records
         } else {
             throw new \Exception("Record not deleted");
         }
-    }
-
-    protected function request(string $type, array $params = [])
-    {
-        try {
-            return $this->client->request( "dns/" . $type, $params);
-        } catch(\Exception $e) {
-            throw new \Exception($e->getMessage());
-        }
-
     }
 }

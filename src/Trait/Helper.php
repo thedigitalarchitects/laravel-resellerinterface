@@ -1,48 +1,54 @@
 <?php
 
  namespace Tda\LaravelResellerinterface\Trait;
+
  use Tda\LaravelResellerinterface\Resellerinterface;
  use ReflectionObject;
  use ReflectionProperty;
- use ReflectionMethod;
 
  Trait Helper
  {
 
     function __call($func, $params){
-        $attributes = (new ReflectionObject(new Static()))->getProperties(ReflectionProperty::IS_PUBLIC);
+        $attributes = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
         if( in_array($func, array_column($attributes, 'name')) ){
-            return self::$$func;
+            return $this->$func;
         }
     }
 
-    protected static function setData(array $data): self
+    protected function fields()
     {
-        $attributes = (new ReflectionObject(new Static()))->getProperties(ReflectionProperty::IS_PUBLIC);
+        $attributes = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
+        return array_column($attributes, 'name');
+    }
+
+    protected function setData(array $data): self
+    {
+        $attributes = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
         foreach($attributes as $attribute) {
             if(isset($data[$attribute->name])) {
-                $attribute->setValue(new Static(), $data[$attribute->name]);
+                $attribute->setValue($this, $data[$attribute->name]);
             }
         }
 
-        return new self();
+        return $this;
     }
 
-    protected static function validate(array $data, string $method = 'create')
+    protected function validate(array $data, string $method = 'create')
     {
         if($method == 'create') {
-            self::checkRequired($data);
+            $this->checkRequired($data);
         }
         if($method == 'update') {
-            self::checkUpdatable($data);
+            $this->checkUpdatable($data);
         }
     }
 
-    protected static function checkRequired(array $data)
+    protected function checkRequired(array $data)
     {
         $required = [];
         foreach($data as $key=>$value) {
-            if(in_array($key, self::$required) && empty($value)) {
+            if(in_array($key, $this->required) && empty($value)) {
                 $required[] = $key;
             }
         }
@@ -51,11 +57,11 @@
         }
     }
 
-    protected static function checkUpdatable(array $data)
+    protected function checkUpdatable(array $data)
     {
         $updatable = [];
         foreach($data as $key=>$value) {
-            if(!in_array($key, self::$updatable)) {
+            if(!in_array($key, $this->updatable)) {
                 $updatable[] = $key;
             }
         }
@@ -64,29 +70,30 @@
         }
     }
 
-    public static function toArray(): array
+    public function toArray(): array
     {
-        $attributes = (new ReflectionObject(new Static()))->getProperties(ReflectionProperty::IS_PUBLIC);
+        $attributes = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
         $data = [];
         foreach($attributes as $attribute) {
-            if($attribute->isInitialized(new Static())) {
-                $data[$attribute->name] = $attribute->getValue(new Static());
+            if($attribute->isInitialized($this)) {
+                $data[$attribute->name] = $attribute->getValue($this);
             }
         }
+
         return $data;
     }
 
-    public static function toJson(): string
+    public function toJson(): string
     {
-        return json_encode(self::toArray());
+        return json_encode($this->toArray());
     }
 
-    public static function toObject(): object
+    public function toObject(): object
     {
-        return (object) self::toArray();
+        return (object) $this->toArray();
     }
 
-    protected static function isSuccess(int $status): bool
+    protected function isSuccess(int $status): bool
     {
         if ($status >= 1000 && $status <= 1999) {
             return true;
@@ -94,7 +101,7 @@
         return false;
     }
 
-    protected static function isFail(int $status): bool
+    protected function isFail(int $status): bool
     {
         if ($status >= 2000) {
             return true;
@@ -102,18 +109,17 @@
         return false;
     }
 
-    public static function request(string $endpoint, array $data = [])
+    protected function request(string $endpoint, array $data = [], bool $withResellerID = true)
     {
         Resellerinterface::init();
-        $data['resellerID'] = $data['resellerID'] ?? Resellerinterface::$resellerId;
-        //dd($data);
-
-        $response = Resellerinterface::getClient()->request( $endpoint, $data);
+        if($withResellerID) {
+            $data['resellerID'] = $data['resellerID'] ?? Resellerinterface::getResellerId();
+        }
+        $response = Resellerinterface::getClient()->request($endpoint, $data);
         if(!$response->isError()) {
             return ($response->getData());
         } else {
-            self::$errors = $response->getErrors();
-            throw new \Exception('Bad request: parameters not valid');
+            throw new \Exception('Bad request: parameters not valid: ' . json_encode($response->getErrors()));
         }
     }
 
