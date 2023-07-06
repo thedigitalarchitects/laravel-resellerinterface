@@ -43,6 +43,7 @@ class Domain
         switch($method) {
             case 'all':
             case 'check':
+            case 'findIds':
             case 'fields':
                 return (new Static)->$method(...$parameters);
         }
@@ -53,9 +54,9 @@ class Domain
         return $this->isAvailable;
     }
 
-    protected function all()
+    protected function all(array $data = []): Collection
     {
-        $response = $this->request("domain/list");
+        $response = $this->request("domain/list", $data);
         $domains = new Collection();
         if($this->isSuccess($response['state'])) {
             foreach($response['list'] as $domain) {
@@ -63,6 +64,13 @@ class Domain
             }
         }
         return $domains;
+    }
+
+    protected function findIds(...$domainIDs): Collection
+    {
+        $data['search']['domainID'] = $domainIDs;
+
+        return $this->all($data);
     }
 
     public function create(Handle $handle): self
