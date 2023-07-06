@@ -41,9 +41,10 @@ class Domain
     public static function __callStatic($method, $parameters)
     {
         switch($method) {
-            case 'all':
+            case 'list':
             case 'check':
             case 'findIds':
+            case 'info':
             case 'fields':
                 return (new Static)->$method(...$parameters);
         }
@@ -54,7 +55,7 @@ class Domain
         return $this->isAvailable;
     }
 
-    protected function all(array $data = []): Collection
+    protected function list(array $data = []): Collection
     {
         $response = $this->request("domain/list", $data);
         $domains = new Collection();
@@ -156,9 +157,8 @@ class Domain
         return $this;
     }
 
-    public function details(mixed $domain = null): self
+    protected function info(mixed $domain): self
     {
-        $domain = $domain ?? $this->domain;
         if(empty($domain)) {
             throw new \Exception('Domain ID not valid');
         }
@@ -169,6 +169,12 @@ class Domain
         } else {
             throw new \Exception("Error creating domain");
         }
+    }
+
+    public function details(mixed $domain = null): self
+    {
+        $domain = $domain ?? $this->domain;
+        return $this->info($domain);
     }
 
     public function getTld(): string
