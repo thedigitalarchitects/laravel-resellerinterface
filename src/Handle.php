@@ -36,7 +36,7 @@ class Handle
     public static function __callStatic($method, $parameters)
     {
         switch($method) {
-            case 'all':
+            case 'list':
             case 'create':
             case 'find':
             case 'fields':
@@ -45,7 +45,7 @@ class Handle
 
     }
 
-    protected function all(string $search = null, int $offset = 0, int $limit = 10): Collection
+    protected function list(string $search = null, int $offset = 0, int $limit = 10): Collection
     {
         $params = array();
         if($search) {
