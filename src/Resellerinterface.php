@@ -20,7 +20,7 @@ class Resellerinterface
 
     public static function init()
     {
-        if(!self::$username) {
+        if(!isset(self::$username)) {
             self::configLocation();
         }
         try {
