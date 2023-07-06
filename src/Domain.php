@@ -66,7 +66,7 @@ class Domain
         return $domains;
     }
 
-    protected function findIds(...$domainIDs): Collection
+    protected function findIds(array $domainIDs): Collection
     {
         $data['search']['domainID'] = $domainIDs;
 
