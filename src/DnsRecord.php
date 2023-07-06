@@ -39,6 +39,18 @@ class DnsRecord
         return $records;
     }
 
+    public function find(int $id): ?self
+    {
+        $records = $this->list();
+        $records = $records->filter(function($record) use ($id) {
+            if($record->id == $id) {
+                return $record;
+            }
+        });
+        $record = $records->first();
+        return $record;
+    }
+
     public function create(string $name, string $type, string $content, int $ttl = 86400): self
     {
         $response = $this->request( "dns/createRecord", [
@@ -55,11 +67,11 @@ class DnsRecord
         }
     }
 
-    public function update(int $id, string $name, string $type, string $content, int $ttl = 86400): self
+    public function update(string $name, string $type, string $content, int $ttl = 86400): self
     {
         $response = $this->request( "dns/updateRecord", [
             'domain' => $this->domain->domain,
-            'id' => $id,
+            'id' => $this->id,
             'name' => $name,
             'type' => $type,
             'content' => $content,
@@ -72,11 +84,11 @@ class DnsRecord
         }
     }
 
-    public function delete(int $id): bool
+    public function delete(): bool
     {
         $response = $this->request( "dns/deleteRecord", [
             'domain' => $this->domain->domain,
-            'id' => $id,
+            'id' => $this->id,
           ] );
           if($this->isSuccess($response['state'])) {
             return true;
