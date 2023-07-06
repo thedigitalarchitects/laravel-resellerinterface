@@ -71,7 +71,7 @@ class Domain
     {
         $data['search']['domainID'] = $domainIDs;
 
-        return $this->all($data);
+        return $this->list($data);
     }
 
     public function create(Handle $handle): self
