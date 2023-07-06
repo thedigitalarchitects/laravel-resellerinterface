@@ -23,11 +23,13 @@ class DnsRecord
     {
     }
 
-    public function all(): Collection
+    public function list(?string $search = null): Collection
     {
-        $response = $this->request( "dns/listRecords", [
-            'domain' => $this->domain->domain,
-          ] );
+        $data = ['domain' => $this->domain->domain];
+        if($search) {
+            $data['search'] = $search;
+        }
+        $response = $this->request( "dns/listRecords", $data );
         $records = new Collection();
         if($this->isSuccess($response['state'])) {
             foreach($response['records'] as $key=>$record) {
@@ -53,11 +55,11 @@ class DnsRecord
         }
     }
 
-    public function update(string $name, string $type, string $content, int $ttl = 86400): self
+    public function update(int $id, string $name, string $type, string $content, int $ttl = 86400): self
     {
         $response = $this->request( "dns/updateRecord", [
             'domain' => $this->domain->domain,
-            'id' => $this->id,
+            'id' => $id,
             'name' => $name,
             'type' => $type,
             'content' => $content,
@@ -70,11 +72,11 @@ class DnsRecord
         }
     }
 
-    public function delete(): bool
+    public function delete(int $id): bool
     {
         $response = $this->request( "dns/deleteRecord", [
             'domain' => $this->domain->domain,
-            'id' => $this->id,
+            'id' => $id,
           ] );
           if($this->isSuccess($response['state'])) {
             return true;
