@@ -14,6 +14,7 @@ class Resellerinterface
     protected static bool $isStaging = false;
     const BASE_STAGING_URL = 'https://core-staging.resellerinterface.de/';
     const CONFIG_LOCATION = 'services.resellerinterface';
+    const CONFIG_LOCATION_STAGING = 'services.resellerinterface_staging';
 
     public array $errors = [];
 
@@ -25,11 +26,13 @@ class Resellerinterface
         }
         try {
             if(self::$isStaging) {
+                self::configLocation(self::CONFIG_LOCATION_STAGING);
                 self::$client = new Client(self::BASE_STAGING_URL);
             } else {
                 self::$client = new Client();
             }
             self::$client->login( self::$username, self::$password, self::$resellerId );
+
         } catch (\Exception $e) {
             throw new \Exception($e->getMessage());
         }
