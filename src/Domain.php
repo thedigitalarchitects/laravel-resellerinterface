@@ -31,11 +31,20 @@ class Domain
     public array $tldExotic;
     public array $tldInfo;
     public array $prices;
-    public float $oneTimePrice;
+    public string $authcode = '';
+    public float $oneTimePrice = 0;
     protected array $additionalParams = [];
 
     protected array $required = ['domain', 'handles'];
     protected array $updatable = ['handles', 'tradeOK', 'nameserver', 'ensID', 'dnssec'];
+
+
+    public function __construct(?string $domainame = null)
+    {
+        if($domainame) {
+            $this->domain = $domainame;
+        }
+    }
 
 
     public static function __callStatic($method, $parameters)
@@ -46,6 +55,7 @@ class Domain
             case 'findIds':
             case 'info':
             case 'fields':
+            case 'listTransfer':
                 return (new Static)->$method(...$parameters);
         }
     }
@@ -74,7 +84,38 @@ class Domain
         return $this->list($data);
     }
 
-    public function create(Handle $handle): self
+    protected function listTransfer(array $data = [])
+    {
+        $response = $this->request('domain/listTransferRequests', $data);
+
+        if($this->isSuccess($response['state'])) {
+            $this->isAvailable = false;
+            return ($response['list']);
+        } else {
+            throw new \Exception("Error transfering domain");
+        }
+    }
+
+    public function transfer(Handle $handle, string $authCode): self
+    {
+        if(!$this->domain) {
+            throw new \Exception('Must have a domain name');
+        }
+        $data = [
+            'domain' => $this->domain,
+            'authcode' => $authCode,
+            'handles' => $handle->getOwnershipData(),
+          ];
+
+        $response = $this->request('domain/transfer', $data);
+        if($this->isSuccess($response['state'])) {
+            return $this->setData($response['domain']);
+        } else {
+            throw new \Exception("Error transfering domain");
+        }
+    }
+
+    public function create(Handle $handle, bool $external = false): self
     {
         if($this->isAvailable == false) {
             throw new \Exception('Domain not available');
@@ -91,15 +132,15 @@ class Domain
             $data = array_merge($data, $this->additionalParams);
         }
 
-        $response = $this->request('domain/create', $data);
+        $response = $this->request('domain/create' . $external ? 'External' : '', $data);
         if($this->isSuccess($response['state'])) {
             $this->isAvailable = false;
             return $this->setData($response['domain']);
         } else {
             throw new \Exception("Error creating domain");
         }
-
     }
+
 
     public function update(array $data = []): self
     {
@@ -140,7 +181,7 @@ class Domain
     protected function check(string $domain): self
     {
         $this->domain = $domain;
-        $response = $this->request('domain/check', ['domain' => $domain]);
+        $response = $this->request('domain/check', [ 'domain' => $domain], false);
         $status = $response['results'][0]['result'];
         switch($status) {
             case 'free':
@@ -149,7 +190,8 @@ class Domain
                 break;
             case 'connect':
                 $this->isAvailable = false;
-                return $this->details($domain);
+                break;
+                //return $this->details($domain);
             default:
                 throw new \Exception('Domain not valid');
         }
@@ -169,6 +211,16 @@ class Domain
         } else {
             throw new \Exception("Error creating domain");
         }
+    }
+
+    public function authCode(): string
+    {
+        $response = $this->request('domain/showAuthcode', [ 'domain' => $this->domain], false);
+        if($this->isSuccess($response['state'])) {
+            return $this->authcode = $response['authcode'];
+        }
+
+        return $this->authcode;
     }
 
     public function details(mixed $domain = null): self
@@ -192,7 +244,6 @@ class Domain
         } else {
             throw new \Exception("Error getting price");
         }
-
     }
 
     public function additionalParams(array $additionalParams)

@@ -86,10 +86,11 @@ class DnsRecord
 
     public function delete(): bool
     {
-        $response = $this->request( "dns/deleteRecord", [
+        $data = [
             'domain' => $this->domain->domain,
             'id' => $this->id,
-          ] );
+        ];
+        $response = $this->request( "dns/deleteRecord", $data, false);
           if($this->isSuccess($response['state'])) {
             return true;
         } else {
