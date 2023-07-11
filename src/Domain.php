@@ -107,6 +107,10 @@ class Domain
             'handles' => $handle->getOwnershipData(),
           ];
 
+        if($this->additionalParams) {
+            $data = array_merge($data, $this->additionalParams);
+        }
+
         $response = $this->request('domain/transfer', $data);
         if($this->isSuccess($response['state'])) {
             return $this->setData($response['domain']);
