@@ -107,7 +107,7 @@ class Domain
             'handles' => $handle->getOwnershipData(),
           ];
 
-        if($this->additionalParams) {
+          if($this->additionalParams) {
             $data = array_merge($data, $this->additionalParams);
         }
 
@@ -119,7 +119,7 @@ class Domain
         }
     }
 
-    public function create(Handle $handle, bool $external = false): self
+    public function create(Handle $handle): self
     {
         if($this->isAvailable == false) {
             throw new \Exception('Domain not available');
@@ -136,7 +136,7 @@ class Domain
             $data = array_merge($data, $this->additionalParams);
         }
 
-        $response = $this->request('domain/create' . $external ? 'External' : '', $data);
+        $response = $this->request('domain/create', $data);
         if($this->isSuccess($response['state'])) {
             $this->isAvailable = false;
             return $this->setData($response['domain']);
@@ -155,12 +155,47 @@ class Domain
         if(empty($data)) {
             throw new \Exception('No data to update');
         }
-        dd($data);
         $data['domain'] = $this->domainID;
         $response = $this->request('domain/update', $data);
 
         if($this->isSuccess($response['state'])) {
             return $this->details($this->domainID);
+        } else {
+            throw new \Exception("Error updating domain");
+        }
+    }
+
+    public function delete(array $data = []): self
+    {
+        $data['domain'] = $this->domain;
+        $response = $this->request('domain/delete', $data);
+
+        if($this->isSuccess($response['state'])) {
+            return $this->setData($response['domain']);
+        } else {
+            throw new \Exception("Error updating domain");
+        }
+    }
+
+    public function undelete(): self
+    {
+        $data['domain'] = $this->domain;
+        $response = $this->request('domain/undelete', $data);
+
+        if($this->isSuccess($response['state'])) {
+            return $this->setData($response['domain']);
+        } else {
+            throw new \Exception("Error updating domain");
+        }
+    }
+
+    public function restore(): self
+    {
+        $data['domain'] = $this->domain;
+        $response = $this->request('domain/restore', $data);
+
+        if($this->isSuccess($response['state'])) {
+            return $this;
         } else {
             throw new \Exception("Error updating domain");
         }
